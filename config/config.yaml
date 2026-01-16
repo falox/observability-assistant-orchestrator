@@ -1,0 +1,22 @@
+# A2A-AGUI Orchestrator Configuration
+# This file shows the configuration options. Actual values are loaded from environment variables.
+
+orchestrator:
+  host: "0.0.0.0"
+  port: 8080
+  workers: 1
+  log_level: "INFO"
+
+# A2A Agent configuration
+# Set ORCHESTRATOR_A2A_AGENT_URL environment variable to configure the target agent
+agents:
+  - name: "default"
+    url: "${ORCHESTRATOR_A2A_AGENT_URL}"  # default: http://localhost:9999
+    timeout: 300
+
+# Default agent to use when no specific agent is requested
+default_agent: "default"
+
+# Session configuration (future use)
+session:
+  ttl: 3600  # seconds

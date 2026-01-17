@@ -5,7 +5,8 @@
 Orchestrator that dispatches observability and troubleshooting tasks to the most appropriate A2A agent. Supports both proactive and reactive workflows. Bridges the AG-UI protocol (frontend) with the A2A protocol (backend agents).
 
 ```
-Frontend (AG-UI) → Orchestrator → A2A Agent
+Frontend (AG-UI) → Orchestrator → Observability Agent (default)
+                                → Generic Agent (for "LS" prefixed messages)
 ```
 
 ## Tech Stack
@@ -41,7 +42,7 @@ src/orchestrator/
 
 ```bash
 make install    # Install dependencies
-make run        # Run server (port 5050, A2A agent at localhost:9999)
+make run        # Run server (port 5050)
 make lint       # Run ruff + mypy
 make format     # Format code
 make test       # Run tests
@@ -51,10 +52,21 @@ make test       # Run tests
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `ORCHESTRATOR_A2A_AGENT_URL` | `http://localhost:9999` | A2A agent URL |
+| `ORCHESTRATOR_OBSERVABILITY_AGENT_URL` | `http://localhost:9999` | Observability agent URL (default) |
+| `ORCHESTRATOR_OBSERVABILITY_AGENT_PATH` | `/` | Observability agent endpoint path |
+| `ORCHESTRATOR_GENERIC_AGENT_URL` | `http://localhost:8080` | Generic agent URL (for "LS" prefixed messages) |
+| `ORCHESTRATOR_GENERIC_AGENT_PATH` | `/a2a` | Generic agent endpoint path |
 | `ORCHESTRATOR_HOST` | `0.0.0.0` | Server host |
 | `ORCHESTRATOR_PORT` | `5050` | Server port |
 | `ORCHESTRATOR_LOG_LEVEL` | `INFO` | Log level |
+
+## Routing Logic
+
+Messages are routed based on their content:
+- Messages starting with **"LS"** (case insensitive) → Generic Agent (`ORCHESTRATOR_GENERIC_AGENT_URL`)
+  - The "LS " prefix is stripped before forwarding
+  - If the message is just "LS" with no content, nothing is sent
+- All other messages → Observability Agent (`ORCHESTRATOR_OBSERVABILITY_AGENT_URL`)
 
 ## API Endpoints
 
@@ -65,7 +77,7 @@ make test       # Run tests
 ## Data Flow
 
 1. Frontend sends `RunAgentInput` to `/api/agui/chat`
-2. `AGUIHandler` emits `RUN_STARTED`, forwards to A2A client
+2. `AGUIHandler` emits `RUN_STARTED`, routes to appropriate A2A client based on message prefix
 3. `A2AClient` streams to A2A agent, receives `TaskStatusUpdateEvent`/`TaskArtifactUpdateEvent`
 4. `A2AToAGUITranslator` converts to `TEXT_MESSAGE_*` events
 5. SSE encoder streams back to frontend
@@ -81,13 +93,17 @@ make test       # Run tests
 ## Testing
 
 ```bash
-# Terminal 1: Start your A2A agent on port 9999
+# Terminal 1: Start your Observability agent on port 9999
 
-# Terminal 2: Start orchestrator
+# Terminal 2: Start your Generic agent on port 8080
+
+# Terminal 3: Start orchestrator
 make run
 
-# Terminal 3: Start your AG-UI frontend
+# Terminal 4: Start your AG-UI frontend
 # Configure it to connect to localhost:5050
 ```
 
-Frontend connects to orchestrator at `localhost:5050`, which forwards to A2A agent at `localhost:9999`.
+Frontend connects to orchestrator at `localhost:5050`, which routes:
+- Messages starting with "LS" → Generic agent at `localhost:8080`
+- All other messages → Observability agent at `localhost:9999`

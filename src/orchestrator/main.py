@@ -39,7 +39,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = Settings()
     setup_logging(settings.log_level)
     logger.info("Orchestrator starting up...")
-    logger.info("A2A Agent URL: %s", settings.a2a_agent_url)
+    logger.info("Observability Agent URL: %s", settings.observability_agent_url)
+    logger.info("Generic Agent URL: %s", settings.generic_agent_url)
     yield
     logger.info("Orchestrator shutting down...")
 

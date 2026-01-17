@@ -42,15 +42,17 @@ class A2AClient:
         timeout: Request timeout in seconds.
     """
 
-    def __init__(self, base_url: str, timeout: int = 300):
+    def __init__(self, base_url: str, timeout: int = 300, path: str = "/"):
         """Initialize A2A client.
 
         Args:
             base_url: Base URL of the A2A agent (e.g., "http://localhost:9999").
             timeout: Request timeout in seconds. Default is 300 (5 minutes).
+            path: Path for the A2A endpoint. Default is "/".
         """
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
+        self.path = path.rstrip("/") if path != "/" else ""
         self._agent_card: Optional[dict[str, Any]] = None
 
     async def get_agent_card(self) -> dict[str, Any]:
@@ -165,7 +167,7 @@ class A2AClient:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 async with client.stream(
                     "POST",
-                    f"{self.base_url}/",
+                    f"{self.base_url}{self.path}",
                     json=request_data.model_dump(),
                     headers={
                         "Accept": "text/event-stream",

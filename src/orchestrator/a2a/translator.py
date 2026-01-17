@@ -142,10 +142,22 @@ class A2AToAGUITranslator:
     def _translate_artifact_update(
         self, event: TaskArtifactUpdateEvent, run_id: str, timestamp: int
     ) -> list[AGUIEvent]:
-        """Translate TaskArtifactUpdateEvent to AG-UI events."""
+        """Translate TaskArtifactUpdateEvent to AG-UI events.
+
+        Note: If a message was already started via status updates, we skip artifact
+        content to avoid duplicating the response. Some A2A agents send content via
+        both status updates (streaming) and artifacts (final), which would cause
+        duplicate content in the UI.
+        """
         events: list[AGUIEvent] = []
 
-        # Extract text from artifact parts
+        # If message was already started via status updates, skip artifact content
+        # to avoid duplicating the response
+        if self._message_started:
+            logger.debug("[Translator] Skipping artifact - already streaming via status updates")
+            return events
+
+        # Extract text from artifact parts (only if no status updates were received)
         for part in event.artifact.parts:
             if isinstance(part, TextPart) and part.text:
                 # Start new message if needed

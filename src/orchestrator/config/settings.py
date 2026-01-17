@@ -22,9 +22,21 @@ class Settings(BaseSettings):
     workers: int = Field(default=1, description="Number of workers")
 
     # A2A Agent configuration
-    a2a_agent_url: str = Field(
+    observability_agent_url: str = Field(
         default="http://localhost:9999",
-        description="URL of the A2A agent to forward requests to",
+        description="URL of the Observability agent (default for non-LS messages)",
+    )
+    observability_agent_path: str = Field(
+        default="/",
+        description="Path for the Observability agent endpoint",
+    )
+    generic_agent_url: str = Field(
+        default="http://localhost:8080",
+        description="URL of the Generic agent for messages starting with 'LS'",
+    )
+    generic_agent_path: str = Field(
+        default="/a2a",
+        description="Path for the Generic agent endpoint",
     )
     a2a_agent_timeout: int = Field(
         default=300,
